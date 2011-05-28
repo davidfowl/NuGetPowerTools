@@ -4,7 +4,7 @@ Visual Studio with nuget.
 
 # Installing
 ## Using the package
-Using the package is good if you want to share these commands with all developers working on a particular project. Just do:
+Using the [package](http://nuget.org/List/Packages/NuGetPowerTools) is good if you want to share these commands with all developers working on a particular project. Just do:
 
     Install-Package NuGetPowerTools
 
