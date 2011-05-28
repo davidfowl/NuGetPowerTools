@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>NuGetPowerTools</id>
+    <version>0.1</version>
+    <authors>David Fowler</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Powershell goodies that make working with nuget even easier!</description>
+    <projectUrl>https://github.com/davidfowl/NuGetPowerTools</projectUrl>
+  </metadata>
+  <files>
+    <file src="*.ps1" target="tools" />
+    <file src="*.psm1" target="tools" />
+    <file src="*.psd1" target="tools" />
+  </files>
+</package>
