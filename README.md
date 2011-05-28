@@ -1,6 +1,5 @@
 # Overview
-NuGetPowerTools is a collection of powershell modules that add useful functions for working within
-Visual Studio with nuget.
+NuGetPowerTools is a collection of powershell modules that add useful functions for working with nuget inside Visual Studio.
 
 # Installing
 ## Using the package
