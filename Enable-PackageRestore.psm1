@@ -1,7 +1,7 @@
-function Ensure-NuGetCommandLine {
+function Ensure-NuGetTools {
     # Install the nuget command line if it doesn't exist
-    $solutionDir = Split-Path $dte.Solution.Properties.Item("Path").Value
-    $nugetExePath = Join-Path (Join-Path $solutionDir tools) NuGet.exe
+    $solutionDir = Get-SolutionDir
+    $nugetExePath = Join-Path (Join-Path $solutionDir nuget) NuGet.exe
     
     if(!(Test-Path $nugetExePath)) {
         Install-Package NuGet.CommandLine
@@ -14,9 +14,9 @@ function Ensure-NuGetCommandLine {
         $packagePath = $pathResolver.GetInstallPath($package)
         $packageExePath = Join-Path (Join-Path $packagePath tools) NuGet.exe
         
-        "Moving NuGet.exe to tools\NuGet.exe, make sure you remember to check it into source control"
+        "Moving NuGet.exe to nuget\NuGet.exe, make sure you remember to check it into source control"
         
-        $toolsPath = (Join-Path $solutionDir tools)
+        $toolsPath = (Join-Path $solutionDir nuget)
         if(!(Test-Path $toolsPath)) {
             mkdir $toolsPath | Out-Null
         }
@@ -26,63 +26,14 @@ function Ensure-NuGetCommandLine {
     }
 }
 
-function Apply-BeforeBuildTarget {
-    param(
-        $Project
-    )
-    
-    function Get-MSBuildProject {
-        param(
-            $Project
-        )
-        
-        # Get the msbuild loaded project
-        $path = $Project.FullName
-        return @([Microsoft.Build.Evaluation.ProjectCollection]::GlobalProjectCollection.GetLoadedProjects($path))[0]
-    }
-    
-    # The restore command
-    $restoreCommand = '"$(SolutionDir)tools\nuget" install "$(ProjectDir)packages.config" -o "$(SolutionDir)packages"'
-    
-    # Get the msbuild project
-    $buildProject = Get-MSBuildProject $project
-    
-    # Try to resolve the before build target
-    $beforeBuildTarget = $buildProject.Xml.Targets | ?{ $_.Name -eq 'BeforeBuild' }
-    
-    if(!$beforeBuildTarget) {
-        # Add a new target if it isn't there
-        $beforeBuildTarget = $buildProject.Xml.AddTarget("BeforeBuild")
-    }
-    
-    # Now try to see if the exec task already exists
-    $execTask = $beforeBuildTarget.Tasks | ?{ $_.Name -eq 'Exec' } | ?{ $command = $_.GetParameter("Command"); $command -eq $restoreCommand }
-    
-    if($execTask) {
-        "Restore command already exists for '$($project.Name)'"
-    }
-    else {
-        # It doesn't exist so create it
-        $execTask = $beforeBuildTarget.AddTask("Exec")
-        $execTask.SetParameter("Command", $restoreCommand)
-        $execTask.SetParameter("WorkingDirectory", '$(MSBuildProjectDirectory)')
-        $execTask.SetParameter("LogStandardErrorAsError", "true")
-        $execTask.Condition = 'Exists(''$(MSBuildProjectDirectory)\packages.config'')'
-        
-        # Save the dte project so it doesn't cause a reload
-        $project.Save()
-        "Added restore command to '$($project.Name)'. Remember to exclude your packages folder from source control."
-    }
-}
-
 function Enable-PackageRestore {
     param(
         [parameter(ValueFromPipelineByPropertyName = $true)]
         [string[]]$ProjectName
     )
     Process {
-        # Make sure the NuGet.CommandLine exists
-        Ensure-NuGetCommandLine
+        # Make sure the nuget tools exists
+        Ensure-NuGetTools
         
         if($ProjectName) {
             $projects = Get-Project $ProjectName
@@ -92,14 +43,33 @@ function Enable-PackageRestore {
             $projects = Get-Project -All
         }
         
+        $targetsPath = '$(SolutionDir)\nuget\NuGet.targets'
+        
         $projects | %{ 
             $project = $_
             try {
-                 Apply-BeforeBuildTarget $project
+                 $project | Add-SolutionDirProperty
+                 
+                 $buildProject = $project | Get-MSBuildProject
+                 if(!($buildProject.Xml.Imports | ?{ $_.Project -eq $targetsPath } )) {
+                    $buildProject.Xml.AddImport($targetsPath) | Out-Null
+                    $project.Save()
+                    "Added restore command to '$($project.Name)'"
+                 }
+                 else {
+                    "Restore command already configured for '$($project.Name)'"
+                 }
             }
             catch {
-                Write-Warning "Failed to add restore command to $($project.Name): $_"
+                Write-Warning "Failed to add restore command to $($project.Name)"
             }
         }
     }
 }
+
+# Statement completion for project names
+Register-TabExpansion 'Enable-PackageRestore' @{
+    ProjectName = { Get-Project -All | Select -ExpandProperty Name }
+}
+
+Export-ModuleMember Enable-PackageRestore
