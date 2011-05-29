@@ -1,28 +1,26 @@
 function Ensure-NuGetTools {
     # Install the nuget command line if it doesn't exist
     $solutionDir = Get-SolutionDir
-    $nugetExePath = Join-Path (Join-Path $solutionDir nuget) NuGet.exe
+    $nugetToolsPath = (Join-Path $solutionDir nuget)
     
-    if(!(Test-Path $nugetExePath)) {
-        Install-Package NuGet.CommandLine
-        $package = @(Get-Package NuGet.CommandLine)[0]
+    if(!(Test-Path $nugetToolsPath)) {
+        Install-Package NuGet.Build -Source 'https://go.microsoft.com/fwlink/?LinkID=206669'
+        $package = @(Get-Package NuGet.Build)[0]
         
         # Get the repository path
         $componentModel = Get-VSComponentModel
         $repositorySettings = $componentModel.GetService([NuGet.VisualStudio.IRepositorySettings])
         $pathResolver = New-Object NuGet.DefaultPackagePathResolver($repositorySettings.RepositoryPath)
         $packagePath = $pathResolver.GetInstallPath($package)
-        $packageExePath = Join-Path (Join-Path $packagePath tools) NuGet.exe
         
-        "Moving NuGet.exe to nuget\NuGet.exe, make sure you remember to check it into source control"
+        Write-Warning "Remember to check the nuget directory into source control!"
         
-        $toolsPath = (Join-Path $solutionDir nuget)
-        if(!(Test-Path $toolsPath)) {
-            mkdir $toolsPath | Out-Null
+        if(!(Test-Path $nugetToolsPath)) {
+            mkdir $nugetToolsPath | Out-Null
         }
         
-        Move-Item $packageExePath $nugetExePath | Out-Null
-        Remove-Item -Recurse -Force $packagePath
+        Copy-Item "$packagePath\tools\*.*" $nugetToolsPath | Out-Null
+        Uninstall-Package NuGet.Build
     }
 }
 
