@@ -65,14 +65,14 @@ function Use-NuGetBuild {
                     $project.Save()
                     $buildProject.ReevaluateIfNecessary()
 
-                    "Enabled package restore for '$($project.Name)'"
+                    "Updated '$($project.Name)' to use $targetsPath"
                  }
                  else {
-                    "Package restore already enabled for '$($project.Name)'"
+                    "'$($project.Name)' already imports $targetsPath"
                  }
             }
             catch {
-                Write-Warning "Failed to enable package restore for $($project.Name)"
+                Write-Warning "Failed to add import to $($project.Name)"
             }
         }
 
