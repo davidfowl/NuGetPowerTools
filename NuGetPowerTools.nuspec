@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>NuGetPowerTools</id>
-    <version>0.23</version>
+    <version>0.24</version>
     <authors>David Fowler</authors>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Powershell goodies that make working with nuget even easier!</description>

@@ -9,7 +9,7 @@ function Resolve-ProjectName {
     }
     else {
         # All projects by default
-        $projects = Get-Project
+        $projects = Get-Project -All
     }
     
     $projects
@@ -112,10 +112,9 @@ function Use-NuGetBuild {
             " - There is a NuGet.targets file in the .nuget folder that adds targets for "
             "   building and restoring packages."
             " - To enable building a package from a project, set <BuildPackage>true</BuildPackage>"
-            "   in your project file."
-            " - When you build your project, all of the packages in packages.config will be "
-            "   restored. To disable restoring packages, set <RestorePackages>false</RestorePackages>"
-            "   to your project (You'll need to check in packages when you do this)."
+            "   in your project file or use the Enable-PackageBuild command"
+            " - To enable restoring packages on build, set <RestorePackage>true</RestorePackage>"
+            "   in your project file or use the Enable-PackageRestore command."
             "*************************************************************************************"
             ""
         }
@@ -127,7 +126,10 @@ function Enable-PackageRestore {
         [parameter(ValueFromPipelineByPropertyName = $true)]
         [string[]]$ProjectName
     )
-    (Resolve-ProjectName $ProjectName) | Set-MSBuildProperty RestorePackage $true
+    (Resolve-ProjectName $ProjectName) | %{ 
+        $_ | Set-MSBuildProperty RestorePackages true
+        "Enabled package restore for $($_.Name)"
+    }
 }
 
 function Disable-PackageRestore {
@@ -135,7 +137,10 @@ function Disable-PackageRestore {
         [parameter(ValueFromPipelineByPropertyName = $true)]
         [string[]]$ProjectName
     )
-    (Resolve-ProjectName $ProjectName) | Set-MSBuildProperty RestorePackage $false
+    (Resolve-ProjectName $ProjectName) | %{ 
+        $_ | Set-MSBuildProperty RestorePackages false
+        "Disabled package restore for $($_.Name)"
+    }
 }
 
 function Enable-PackageBuild {
@@ -143,7 +148,10 @@ function Enable-PackageBuild {
         [parameter(ValueFromPipelineByPropertyName = $true)]
         [string[]]$ProjectName
     )
-    (Resolve-ProjectName $ProjectName) | Set-MSBuildProperty BuildPackage $true
+    (Resolve-ProjectName $ProjectName) | %{ 
+        $_ | Set-MSBuildProperty BuildPackage true
+        "Enabled package build for $($_.Name)"
+    }
 }
 
 function Disable-PackageBuild {
@@ -151,12 +159,17 @@ function Disable-PackageBuild {
         [parameter(ValueFromPipelineByPropertyName = $true)]
         [string[]]$ProjectName
     )
-    (Resolve-ProjectName $ProjectName) | Set-MSBuildProperty BuildPackage $false
+    (Resolve-ProjectName $ProjectName) | %{ 
+        $_ | Set-MSBuildProperty BuildPackage false
+        "Disabled package build for $($_.Name)"
+    }
 }
 
 # Statement completion for project names
-Register-TabExpansion 'Use-NuGetBuild' @{
-    ProjectName = { Get-Project -All | Select -ExpandProperty Name }
+'Use-NuGetBuild', 'Enable-PackageRestore', 'Disable-PackageRestore', 'Enable-PackageBuild', 'Disable-PackageBuild' | %{ 
+    Register-TabExpansion $_ @{
+        ProjectName = { Get-Project -All | Select -ExpandProperty Name }
+    }
 }
 
 Export-ModuleMember Use-NuGetBuild, Enable-PackageRestore, Disable-PackageRestore, Enable-PackageBuild, Disable-PackageBuild
