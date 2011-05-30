@@ -56,7 +56,7 @@ function Add-SolutionDirProperty {
          if(!($buildProject.Xml.Properties | ?{ $_.Name -eq 'SolutionDir' })) {
             $relativeSolutionPath = [NuGet.PathUtility]::GetRelativePath($_.FullName, (Get-SolutionDir))
             $solutionDirProperty = $buildProject.Xml.AddProperty("SolutionDir", $relativeSolutionPath)
-            $solutionDirProperty.Condition = '$(SolutionDir) == ''*Undefined*'''
+            $solutionDirProperty.Condition = '$(SolutionDir) == '''' Or $(SolutionDir) == ''*Undefined*'''
             $_.Save()
          }
      }

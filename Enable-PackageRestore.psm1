@@ -19,7 +19,7 @@ function Ensure-NuGetTools {
             mkdir $nugetToolsPath | Out-Null
         }
         
-        Copy-Item "$packagePath\tools\*.*" $nugetToolsPath | Out-Null
+        Copy-Item "$packagePath\tools\*.*" $nugetToolsPath -Force | Out-Null
         Uninstall-Package NuGet.Build
     }
 }
