@@ -1,3 +1,20 @@
+function Resolve-ProjectName {
+    param(
+        [parameter(ValueFromPipelineByPropertyName = $true)]
+        [string[]]$ProjectName
+    )
+    
+    if($ProjectName) {
+        $projects = Get-Project $ProjectName
+    }
+    else {
+        # All projects by default
+        $projects = Get-Project
+    }
+    
+    $projects
+}
+
 function Ensure-NuGetBuild {
     # Install the nuget command line if it doesn't exist
     $solutionDir = Get-SolutionDir
@@ -105,9 +122,41 @@ function Use-NuGetBuild {
     }
 }
 
+function Enable-PackageRestore {
+    param(
+        [parameter(ValueFromPipelineByPropertyName = $true)]
+        [string[]]$ProjectName
+    )
+    (Resolve-ProjectName $ProjectName) | Set-MSBuildProperty RestorePackage $true
+}
+
+function Disable-PackageRestore {
+    param(
+        [parameter(ValueFromPipelineByPropertyName = $true)]
+        [string[]]$ProjectName
+    )
+    (Resolve-ProjectName $ProjectName) | Set-MSBuildProperty RestorePackage $false
+}
+
+function Enable-PackageBuild {
+    param(
+        [parameter(ValueFromPipelineByPropertyName = $true)]
+        [string[]]$ProjectName
+    )
+    (Resolve-ProjectName $ProjectName) | Set-MSBuildProperty BuildPackage $true
+}
+
+function Disable-PackageBuild {
+    param(
+        [parameter(ValueFromPipelineByPropertyName = $true)]
+        [string[]]$ProjectName
+    )
+    (Resolve-ProjectName $ProjectName) | Set-MSBuildProperty BuildPackage $false
+}
+
 # Statement completion for project names
 Register-TabExpansion 'Use-NuGetBuild' @{
     ProjectName = { Get-Project -All | Select -ExpandProperty Name }
 }
 
-Export-ModuleMember Use-NuGetBuild
+Export-ModuleMember Use-NuGetBuild, Enable-PackageRestore, Disable-PackageRestore, Enable-PackageBuild, Disable-PackageBuild
