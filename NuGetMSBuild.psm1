@@ -65,14 +65,14 @@ function Use-NuGetBuild {
                     $project.Save()
                     $buildProject.ReevaluateIfNecessary()
 
-                    "Updated '$($project.Name)' to use $targetsPath"
+                    "Updated '$($project.Name)' to use 'NuGet.targets'"
                  }
                  else {
-                    "'$($project.Name)' already imports $targetsPath"
+                    "'$($project.Name)' already imports 'NuGet.targets'"
                  }
             }
             catch {
-                Write-Warning "Failed to add import to $($project.Name)"
+                Write-Warning "Failed to add import 'NuGet.targets' to $($project.Name)"
             }
         }
 
@@ -85,16 +85,13 @@ function Use-NuGetBuild {
             " INSTRUCTIONS"
             "*************************************************************************************"
             " - A .nuget folder has been added to your solution root. Make sure you check it in!"
-            " - There is a NuGet.targets file in the .nuget folder that adds some targets for"
+            " - There is a NuGet.targets file in the .nuget folder that adds targets for "
             "   building and restoring packages."
-            " - When you build your project, all of the packages in packages.config will be restored."
-            "   You can remove 'packages' (at solution level) from source control."
-            " - To disable restoring packages, add <RestorePackages>false</RestorePackages>"
+            " - To enable building a package from a project, set <BuildPackage>true</BuildPackage>"
+            "   in your project file."
+            " - When you build your project, all of the packages in packages.config will be "
+            "   restored. To disable restoring packages, set <RestorePackages>false</RestorePackages>"
             "   to your project (You'll need to check in packages when you do this)."
-            " - To customize package sources used to restore, change the 'PackageSources' property in"
-            "   .nuget/NuGet.targets"
-            " - To enable building a package from a project, set  <BuildPackage>true</BuildPackage>"
-            "   in your project file"
             "*************************************************************************************"
             ""
         }
