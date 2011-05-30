@@ -8,8 +8,7 @@ function Ensure-NuGetBuild {
         $package = @(Get-Package NuGet.Build)[0]
         
         if(!$package) {
-            Write-Error "Unable to locate NuGet.Build"
-            return
+            return $false
         }
         
         # Get the repository path
@@ -25,6 +24,8 @@ function Ensure-NuGetBuild {
         Copy-Item "$packagePath\tools\*.*" $nugetToolsPath -Force | Out-Null
         Uninstall-Package NuGet.Build
     }
+
+    return $true
 }
 
 function Use-NuGetBuild {
@@ -34,11 +35,15 @@ function Use-NuGetBuild {
     )
     Begin {
         $success = $false
+        
+        # Make sure the nuget tools exists        
+        $initialized = Ensure-NuGetBuild
     }
     Process {
-        # Make sure the nuget tools exists
-        Ensure-NuGetBuild
-        
+        if(!$initialized) {
+            return
+        }
+         
         if($ProjectName) {
             $projects = Get-Project $ProjectName
         }
