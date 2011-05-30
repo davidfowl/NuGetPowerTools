@@ -55,7 +55,7 @@ TypesToProcess = @()
 FormatsToProcess = @()
 
 # Modules to import as nested modules of the module specified in ModuleToProcess
-NestedModules = @('VS.psm1', 'MSBuild.psm1', 'Enable-PackageRestore.psm1')
+NestedModules = @('VS.psm1', 'MSBuild.psm1', 'NuGetMSBuild.psm1')
 
 # Functions to export from this module
 FunctionsToExport = '*'
