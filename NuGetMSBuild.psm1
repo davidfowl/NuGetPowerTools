@@ -35,15 +35,8 @@ function Use-NuGetBuild {
     )
     Begin {
         $success = $false
-        
-        # Make sure the nuget tools exists        
-        $initialized = Ensure-NuGetBuild
     }
     Process {
-        if(!$initialized) {
-            return
-        }
-         
         if($ProjectName) {
             $projects = Get-Project $ProjectName
         }
@@ -62,6 +55,16 @@ function Use-NuGetBuild {
         $projects | %{ 
             $project = $_
             try {
+                 if($project.Type -eq 'Web Site') {
+                    Write-Warning "Skipping '$($project.Name)', Website projects are not supported"
+                    return
+                 }
+                 
+                 if(!$initialized) {
+                    # Make sure the nuget tools exists
+                    $initialized = Ensure-NuGetBuild
+                 }
+                 
                  $project | Add-SolutionDirProperty
                  
                  $buildProject = $project | Get-MSBuildProject
@@ -75,13 +78,12 @@ function Use-NuGetBuild {
                  else {
                     "'$($project.Name)' already imports 'NuGet.targets'"
                  }
+                 $success = $true
             }
             catch {
                 Write-Warning "Failed to add import 'NuGet.targets' to $($project.Name)"
             }
         }
-
-        $success = $true
     }
     End {
         if($success) {
