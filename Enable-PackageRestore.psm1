@@ -1,19 +1,22 @@
 function Ensure-NuGetTools {
     # Install the nuget command line if it doesn't exist
     $solutionDir = Get-SolutionDir
-    $nugetToolsPath = (Join-Path $solutionDir nuget)
+    $nugetToolsPath = (Join-Path $solutionDir .nuget)
     
-    if(!(Test-Path $nugetToolsPath)) {
+    if(!(Test-Path $nugetToolsPath) -or !(Get-ChildItem $nugetToolsPath)) {
         Install-Package NuGet.Build -Source 'https://go.microsoft.com/fwlink/?LinkID=206669'
         $package = @(Get-Package NuGet.Build)[0]
+        
+        if(!$package) {
+            Write-Error "Unable to locate NuGet.Build"
+            return
+        }
         
         # Get the repository path
         $componentModel = Get-VSComponentModel
         $repositorySettings = $componentModel.GetService([NuGet.VisualStudio.IRepositorySettings])
         $pathResolver = New-Object NuGet.DefaultPackagePathResolver($repositorySettings.RepositoryPath)
         $packagePath = $pathResolver.GetInstallPath($package)
-        
-        Write-Warning "Remember to check the nuget directory into source control!"
         
         if(!(Test-Path $nugetToolsPath)) {
             mkdir $nugetToolsPath | Out-Null
@@ -41,7 +44,7 @@ function Enable-PackageRestore {
             $projects = Get-Project -All
         }
         
-        $targetsPath = '$(SolutionDir)\nuget\NuGet.targets'
+        $targetsPath = '$(SolutionDir)\.nuget\NuGet.targets'
         
         $projects | %{ 
             $project = $_
@@ -52,16 +55,31 @@ function Enable-PackageRestore {
                  if(!($buildProject.Xml.Imports | ?{ $_.Project -eq $targetsPath } )) {
                     $buildProject.Xml.AddImport($targetsPath) | Out-Null
                     $project.Save()
-                    "Added restore command to '$($project.Name)'"
+                    "Enabled package restore for '$($project.Name)'"
                  }
                  else {
-                    "Restore command already configured for '$($project.Name)'"
+                    "Package restore already enabled for '$($project.Name)'"
                  }
             }
             catch {
-                Write-Warning "Failed to add restore command to $($project.Name)"
+                Write-Warning "Failed to enable package restore for $($project.Name)"
             }
         }
+    }
+    End {
+        ""
+        "*************************************************************************************"
+        " INSTRUCTIONS"
+        "*************************************************************************************"
+        " - Make sure you check in the .nuget folder!"
+        " - When you build your project, all of the packages in packages.config will be restored."
+        " - You can remove 'packages' (at solution level) from source control."
+        " - To disable restoring packages, add <EnablePackageRestore>false</EnablePackageRestore>"
+        "   to your project (You'll need to check in packages when you do this)."
+        " - To customize package sources used to restore, change the 'PackageSources' property in"
+        "   .nuget/NuGet.targets"
+        "*************************************************************************************"
+        ""
     }
 }
 
