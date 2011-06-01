@@ -45,7 +45,7 @@ function Ensure-NuGetBuild {
     return $true
 }
 
-function Use-NuGetBuild {
+function Add-NuGetTargets {
     param(
         [parameter(ValueFromPipelineByPropertyName = $true)]
         [string[]]$ProjectName
@@ -166,10 +166,10 @@ function Disable-PackageBuild {
 }
 
 # Statement completion for project names
-'Use-NuGetBuild', 'Enable-PackageRestore', 'Disable-PackageRestore', 'Enable-PackageBuild', 'Disable-PackageBuild' | %{ 
+'Add-NuGetTargets', 'Enable-PackageRestore', 'Disable-PackageRestore', 'Enable-PackageBuild', 'Disable-PackageBuild' | %{ 
     Register-TabExpansion $_ @{
         ProjectName = { Get-Project -All | Select -ExpandProperty Name }
     }
 }
 
-Export-ModuleMember Use-NuGetBuild, Enable-PackageRestore, Disable-PackageRestore, Enable-PackageBuild, Disable-PackageBuild
+Export-ModuleMember Add-NuGetTargets, Enable-PackageRestore, Disable-PackageRestore, Enable-PackageBuild, Disable-PackageBuild
