@@ -84,7 +84,11 @@ function Add-SolutionDirProperty {
         $buildProject = $_ | Get-MSBuildProject
         
          if(!($buildProject.Xml.Properties | ?{ $_.Name -eq 'SolutionDir' })) {
-            $relativeSolutionPath = [NuGet.PathUtility]::EnsureTrailingSlash([NuGet.PathUtility]::GetRelativePath($_.FullName, (Get-SolutionDir)))
+            # Get the relative path to the solution
+            $relativeSolutionPath = [NuGet.PathUtility]::GetRelativePath($_.FullName, $dte.Solution.Properties.Item("Path").Value)
+            $relativeSolutionPath = [IO.Path]::GetDirectoryName($relativeSolutionPath)
+            $relativeSolutionPath = [NuGet.PathUtility]::EnsureTrailingSlash($relativeSolutionPath)
+            
             $solutionDirProperty = $buildProject.Xml.AddProperty("SolutionDir", $relativeSolutionPath)
             $solutionDirProperty.Condition = '$(SolutionDir) == '''' Or $(SolutionDir) == ''*Undefined*'''
             $_.Save()
