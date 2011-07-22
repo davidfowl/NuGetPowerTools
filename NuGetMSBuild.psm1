@@ -15,6 +15,17 @@ function Resolve-ProjectName {
     $projects
 }
 
+function Get-InstallPath {
+    param(
+        $package
+    )
+    # Get the repository path
+    $componentModel = Get-VSComponentModel
+    $repositorySettings = $componentModel.GetService([NuGet.VisualStudio.IRepositorySettings])
+    $pathResolver = New-Object NuGet.DefaultPackagePathResolver($repositorySettings.RepositoryPath)
+    $pathResolver.GetInstallPath($package)
+}
+
 function Ensure-NuGetBuild {
     # Install the nuget command line if it doesn't exist
     $solutionDir = Get-SolutionDir
@@ -22,24 +33,25 @@ function Ensure-NuGetBuild {
     
     if(!(Test-Path $nugetToolsPath) -or !(Get-ChildItem $nugetToolsPath)) {
         Install-Package NuGet.Build -Source 'https://go.microsoft.com/fwlink/?LinkID=206669'
-        $package = @(Get-Package NuGet.Build)[0]
         
-        if(!$package) {
+        $nugetBuildPackage = @(Get-Package NuGet.Build)[0]
+        $nugetExePackage = @(Get-Package NuGet.CommandLine)[0]
+        
+        if(!$nugetBuildPackage -and !$nugetExePackage) {
             return $false
         }
         
-        # Get the repository path
-        $componentModel = Get-VSComponentModel
-        $repositorySettings = $componentModel.GetService([NuGet.VisualStudio.IRepositorySettings])
-        $pathResolver = New-Object NuGet.DefaultPackagePathResolver($repositorySettings.RepositoryPath)
-        $packagePath = $pathResolver.GetInstallPath($package)
+        # Get the package path
+        $nugetBuildPath = Get-InstallPath $nugetBuildPackage
+        $nugetExePath = Get-InstallPath $nugetExePackage
         
         if(!(Test-Path $nugetToolsPath)) {
             mkdir $nugetToolsPath | Out-Null
         }
         
-        Copy-Item "$packagePath\tools\*.*" $nugetToolsPath -Force | Out-Null
-        Uninstall-Package NuGet.Build
+        Copy-Item "$nugetBuildPath\tools\*.*" $nugetToolsPath -Force | Out-Null
+        Copy-Item "$nugetExePath\tools\*.*" $nugetToolsPath -Force | Out-Null
+        Uninstall-Package NuGet.Build -RemoveDependencies
     }
 
     return $true
