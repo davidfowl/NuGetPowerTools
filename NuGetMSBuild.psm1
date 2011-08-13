@@ -48,10 +48,14 @@ function Ensure-NuGetBuild {
         if(!(Test-Path $nugetToolsPath)) {
             mkdir $nugetToolsPath | Out-Null
         }
-        
+
+        Write-Host "Copying nuget.exe and msbuild scripts to $nugetToolsPath"
+
         Copy-Item "$nugetBuildPath\tools\*.*" $nugetToolsPath -Force | Out-Null
         Copy-Item "$nugetExePath\tools\*.*" $nugetToolsPath -Force | Out-Null
         Uninstall-Package NuGet.Build -RemoveDependencies
+
+        Write-Host "Don't forget to commit the .nuget folder"
     }
 
     return $true
@@ -62,9 +66,6 @@ function Add-NuGetTargets {
         [parameter(ValueFromPipelineByPropertyName = $true)]
         [string[]]$ProjectName
     )
-    Begin {
-        $success = $false
-    }
     Process {
         if($ProjectName) {
             $projects = Get-Project $ProjectName
@@ -104,31 +105,10 @@ function Add-NuGetTargets {
 
                     "Updated '$($project.Name)' to use 'NuGet.targets'"
                  }
-                 else {
-                    "'$($project.Name)' already imports 'NuGet.targets'"
-                 }
-                 $success = $true
             }
             catch {
                 Write-Warning "Failed to add import 'NuGet.targets' to $($project.Name)"
             }
-        }
-    }
-    End {
-        if($success) {
-            ""
-            "*************************************************************************************"
-            " INSTRUCTIONS"
-            "*************************************************************************************"
-            " - A .nuget folder has been added to your solution root. Make sure you check it in!"
-            " - There is a NuGet.targets file in the .nuget folder that adds targets for "
-            "   building and restoring packages."
-            " - To enable building a package from a project, set <BuildPackage>true</BuildPackage>"
-            "   in your project file or use the Enable-PackageBuild command"
-            " - To enable restoring packages on build, set <RestorePackage>true</RestorePackage>"
-            "   in your project file or use the Enable-PackageRestore command."
-            "*************************************************************************************"
-            ""
         }
     }
 }
@@ -138,6 +118,10 @@ function Enable-PackageRestore {
         [parameter(ValueFromPipelineByPropertyName = $true)]
         [string[]]$ProjectName
     )
+    
+    # Add the nuget targets on demand
+    Add-NuGetTargets $ProjectName
+    
     (Resolve-ProjectName $ProjectName) | %{ 
         $_ | Set-MSBuildProperty RestorePackages true
         "Enabled package restore for $($_.Name)"
@@ -160,6 +144,10 @@ function Enable-PackageBuild {
         [parameter(ValueFromPipelineByPropertyName = $true)]
         [string[]]$ProjectName
     )
+    
+    # Add the nuget targets on demand
+    Add-NuGetTargets $ProjectName
+    
     (Resolve-ProjectName $ProjectName) | %{ 
         $_ | Set-MSBuildProperty BuildPackage true
         "Enabled package build for $($_.Name)"
@@ -178,10 +166,10 @@ function Disable-PackageBuild {
 }
 
 # Statement completion for project names
-'Add-NuGetTargets', 'Enable-PackageRestore', 'Disable-PackageRestore', 'Enable-PackageBuild', 'Disable-PackageBuild' | %{ 
+'Enable-PackageRestore', 'Disable-PackageRestore', 'Enable-PackageBuild', 'Disable-PackageBuild' | %{ 
     Register-TabExpansion $_ @{
         ProjectName = { Get-Project -All | Select -ExpandProperty Name }
     }
 }
 
-Export-ModuleMember Add-NuGetTargets, Enable-PackageRestore, Disable-PackageRestore, Enable-PackageBuild, Disable-PackageBuild
+Export-ModuleMember Enable-PackageRestore, Disable-PackageRestore, Enable-PackageBuild, Disable-PackageBuild
