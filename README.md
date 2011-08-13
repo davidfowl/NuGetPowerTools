@@ -12,7 +12,7 @@ Read more [here](http://docs.nuget.org/docs/start-here/using-the-package-manager
 
 # Using the package
 ## Package Restore and Build
-NuGetPowerTools make it super easy to enable package restore () and building a package from your project.
+NuGetPowerTools make it super easy to enable package restore and building a package from your project.
 
 For restore, just type:
 
