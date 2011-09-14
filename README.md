@@ -1,3 +1,6 @@
+# License
+Same as NuGet http://nuget.codeplex.com/license
+
 # Overview
 NuGetPowerTools is a collection of powershell modules that add useful functions for working with nuget inside Visual Studio.
 
