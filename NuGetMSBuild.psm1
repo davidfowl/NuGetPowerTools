@@ -32,7 +32,15 @@ function Ensure-NuGetBuild {
     $nugetToolsPath = (Join-Path $solutionDir .nuget)
     
     if(!(Test-Path $nugetToolsPath) -or !(Get-ChildItem $nugetToolsPath)) {
-        Install-Package NuGet.Build -Source 'https://go.microsoft.com/fwlink/?LinkID=206669'
+        Write-Host "Tool path does not exist or could not find nuget.exe and msbuild scripts in the tool path."
+
+	try {
+	        Install-Package NuGet.Build
+	}
+        catch {
+            Write-Warning "Could not find NuGet.Build in normal sources, attempting default source."
+            Install-Package NuGet.Build -Source 'https://go.microsoft.com/fwlink/?LinkID=206669'
+        }
         
         $nugetBuildPackage = @(Get-Package NuGet.Build)[0]
         $nugetExePackage = @(Get-Package NuGet.CommandLine)[0]
@@ -107,7 +115,7 @@ function Add-NuGetTargets {
                  }
             }
             catch {
-                Write-Warning "Failed to add import 'NuGet.targets' to $($project.Name)"
+                Write-Warning "Failed to add import 'NuGet.targets' to $($project.Name) because $($_)"
             }
         }
     }
