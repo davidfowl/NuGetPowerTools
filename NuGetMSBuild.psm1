@@ -33,7 +33,7 @@ function Ensure-NuGetBuild {
     
     if(!(Test-Path $nugetToolsPath) -or !(Get-ChildItem $nugetToolsPath)) {
         Write-Host "Tool path does not exist or could not find nuget.exe and msbuild scripts in the tool path."
-		
+
 		$nugetBuildPackage = @(Get-Package -List NuGet.Build)[0]
 		$nugetExePackage = @(Get-Package -List NuGet.CommandLine)[0]
 		
