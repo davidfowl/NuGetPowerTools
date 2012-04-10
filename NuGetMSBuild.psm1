@@ -32,30 +32,41 @@ function Ensure-NuGetBuild {
     $nugetToolsPath = (Join-Path $solutionDir .nuget)
     
     if(!(Test-Path $nugetToolsPath) -or !(Get-ChildItem $nugetToolsPath)) {
-        Install-Package NuGet.Build -Source 'https://go.microsoft.com/fwlink/?LinkID=206669'
-        
-        $nugetBuildPackage = @(Get-Package NuGet.Build)[0]
-        $nugetExePackage = @(Get-Package NuGet.CommandLine)[0]
-        
-        if(!$nugetBuildPackage -and !$nugetExePackage) {
-            return $false
-        }
-        
-        # Get the package path
-        $nugetBuildPath = Get-InstallPath $nugetBuildPackage
-        $nugetExePath = Get-InstallPath $nugetExePackage
-        
-        if(!(Test-Path $nugetToolsPath)) {
-            mkdir $nugetToolsPath | Out-Null
-        }
+        Write-Host "Tool path does not exist or could not find nuget.exe and msbuild scripts in the tool path."
 
-        Write-Host "Copying nuget.exe and msbuild scripts to $nugetToolsPath"
+		$nugetBuildPackage = @(Get-Package -List NuGet.Build)[0]
+		$nugetExePackage = @(Get-Package -List NuGet.CommandLine)[0]
+		
+		if($nugetBuildPackage -and $nugetExePackage) {
+			Install-Package NuGet.Build
+		}
+		else {
+			Write-Warning "Could not find NuGet.Build in normal sources, attempting default source."
+			Install-Package NuGet.Build -Source 'https://go.microsoft.com/fwlink/?LinkID=206669'
+		}
+		
+		$nugetBuildPackage = @(Get-Package NuGet.Build)[0]
+		$nugetExePackage = @(Get-Package NuGet.CommandLine)[0]
+		
+		if(!$nugetBuildPackage -and !$nugetExePackage) {
+			return $false
+		}
+		
+		# Get the package path
+		$nugetBuildPath = Get-InstallPath $nugetBuildPackage
+		$nugetExePath = Get-InstallPath $nugetExePackage
+		
+		if(!(Test-Path $nugetToolsPath)) {
+			mkdir $nugetToolsPath | Out-Null
+		}
 
-        Copy-Item "$nugetBuildPath\tools\*.*" $nugetToolsPath -Force | Out-Null
-        Copy-Item "$nugetExePath\tools\*.*" $nugetToolsPath -Force | Out-Null
-        Uninstall-Package NuGet.Build -RemoveDependencies
+		Write-Host "Copying nuget.exe and msbuild scripts to $nugetToolsPath"
 
-        Write-Host "Don't forget to commit the .nuget folder"
+		Copy-Item "$nugetBuildPath\tools\*.*" $nugetToolsPath -Force | Out-Null
+		Copy-Item "$nugetExePath\tools\*.*" $nugetToolsPath -Force | Out-Null
+		Uninstall-Package NuGet.Build -RemoveDependencies
+
+		Write-Host "Don't forget to commit the .nuget folder"
     }
 
     return $true
@@ -107,7 +118,7 @@ function Add-NuGetTargets {
                  }
             }
             catch {
-                Write-Warning "Failed to add import 'NuGet.targets' to $($project.Name)"
+                Write-Warning "Failed to add import 'NuGet.targets' to $($project.Name) because $($_)"
             }
         }
     }

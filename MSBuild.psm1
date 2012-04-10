@@ -28,6 +28,22 @@ function Get-MSBuildProject {
     }
 }
 
+function Remove-Import {
+    param(
+        [parameter(Position = 0, Mandatory = $true)]
+        [string]$Path,
+        [parameter(Position = 1, ValueFromPipelineByPropertyName = $true)]
+        [string[]]$ProjectName
+    )
+    Process {
+        (Resolve-ProjectName $ProjectName) | %{
+            $buildProject = $_ | Get-MSBuildProject
+            $buildProject.Xml.RemoveImport($Path)
+            $_.Save()
+        }
+    }
+}
+
 function Add-Import {
     param(
         [parameter(Position = 0, Mandatory = $true)]
@@ -118,4 +134,4 @@ Register-TabExpansion 'Get-MSBuildProperty' @{
     }
 }
 
-Export-ModuleMember Get-MSBuildProject, Add-SolutionDirProperty, Add-Import, Get-MSBuildProperty, Set-MSBuildProperty
+Export-ModuleMember Get-MSBuildProject, Add-SolutionDirProperty, Add-Import, Remove-Import, Get-MSBuildProperty, Set-MSBuildProperty
